@@ -43,14 +43,17 @@ const TITLE = process.argv[2] ?? "<your-session-title>";
 	// horizontally (font shrinks to fit instead).
 	const stripMetrics = await page.evaluate(() => {
 		const el = document.querySelector(".dsh-subagent-stats-root");
+		const strong = document.querySelector(".dsh-subagent-stats-strong");
 		return {
 			scrollWidth: el.scrollWidth,
 			clientWidth: el.clientWidth,
 			clientHeight: el.clientHeight,
-			fontSize: getComputedStyle(el).fontSize
+			fontSize: getComputedStyle(el).fontSize,
+			color: getComputedStyle(el).color,
+			strongColor: strong ? getComputedStyle(strong).color : null
 		};
 	});
-	const tailVisible = /输出 [\d.]+[KM]? tok/.test(line);
+	const tailVisible = /输出 [\d.]+[KM]?/.test(line);
 	const oneLine = stripMetrics.clientHeight <= 30;
 	const noClip = stripMetrics.scrollWidth <= stripMetrics.clientWidth + 2;
 
