@@ -38,6 +38,17 @@ const TITLE = process.argv[2] ?? "<your-session-title>";
 		const el = document.querySelector(".dsh-subagent-stats-root");
 		return el.scrollWidth > el.clientWidth;
 	});
+	// "No data swallowed" checks: the strip must show its full tail (the last
+	// group: "输出 … tok") and must not clip horizontally.
+	const stripMetrics = await page.evaluate(() => {
+		const el = document.querySelector(".dsh-subagent-stats-root");
+		return {
+			scrollWidth: el.scrollWidth,
+			clientWidth: el.clientWidth,
+			clientHeight: el.clientHeight
+		};
+	});
+	const tailVisible = /输出 [\d.]+[KM]? tok/.test(line);
 
 	// Hover and wait for the 500ms tooltip delay.
 	await page.hover(".dsh-subagent-stats-root");
@@ -76,6 +87,8 @@ const TITLE = process.argv[2] ?? "<your-session-title>";
 	console.log(JSON.stringify({
 		line,
 		isTruncated,
+		tailVisible,
+		stripMetrics,
 		tooltip,
 		consoleErrors,
 		pageErrors
