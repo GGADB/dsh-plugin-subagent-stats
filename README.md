@@ -1,4 +1,7 @@
-# dsh-plugin-subagent-stats
+# 更好的统计条（dsh-plugin-better-stats-line）
+
+> 原名 dsh-plugin-subagent-stats —— GitHub 仓库名仅支持 ASCII，故仓库名使用英文，
+> 项目显示名与插件设置入口均为「更好的统计条」。
 
 把当前会话及其所有子孙 subagent 会话的统计合并到 DeepSeek Harness Web 底部统计条，
 补全子 agent 的输入/输出 token、缓存命中、LLM/工具耗时等计算缺口。
