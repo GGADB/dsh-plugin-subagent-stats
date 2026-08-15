@@ -40,6 +40,16 @@ const TITLE = process.argv[2] ?? "写一个插件，我注意到这个DSH";
 			});
 			candidates[candidates.length - 1]?.click();
 		});
+		// Second-level menu: open the "统计条" section tab.
+		await page.waitForTimeout(800);
+		await page.evaluate(() => {
+			const candidates = Array.from(document.querySelectorAll("[role='button'], button, div, li, span")).filter((el) => {
+				const t = (el.textContent ?? "").trim();
+				return t === "统计条" || t === "Stats line";
+			});
+			candidates.sort((a, b) => a.textContent.length - b.textContent.length);
+			candidates[0]?.click();
+		});
 		await page.waitForSelector('[data-stats-toggle="strip.counts"]', { timeout: 30000 });
 	};
 	const closeSettings = async () => {
