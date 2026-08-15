@@ -1,0 +1,35 @@
+{
+  "name": "dsh-plugin-subagent-stats",
+  "version": "0.1.0",
+  "description": "Merge every descendant subagent session's sessionStats/tokenUsage projections into the root session's bottom stats line, closing the accounting gap for delegated work",
+  "keywords": [
+    "dsh",
+    "deepseek-harness",
+    "plugin",
+    "subagent",
+    "stats",
+    "projection"
+  ],
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib",
+    "README.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "client": {
+      "platform": "web"
+    }
+  },
+  "license": "MIT"
+}
