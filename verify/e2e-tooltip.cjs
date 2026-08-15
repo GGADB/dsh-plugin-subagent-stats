@@ -48,13 +48,28 @@ const TITLE = process.argv[2] ?? "<your-session-title>";
 		const rows = Array.from(el.firstElementChild ? el.firstElementChild.children : []);
 		const rowHeights = rows.map((r) => r.getBoundingClientRect().height);
 		const wrapped = rowHeights.filter((h) => h > 20).length; // line-height 18px → wrapped rows exceed 20px
+		// Title colors: first span of each content row (skip the divider).
+		const contentRows = rows.filter((r) => r.getBoundingClientRect().height > 8);
+		const labelColors = contentRows.map((r) => {
+			const label = r.firstElementChild;
+			return label ? getComputedStyle(label).color : null;
+		});
+		// Emphasized key values: spans with font-weight 600.
+		const strongs = Array.from(el.querySelectorAll("span")).filter((s) => getComputedStyle(s).fontWeight === "600");
+		// Strip-level emphasis (bottom stats line).
+		const stripStrongs = Array.from(document.querySelectorAll(".dsh-subagent-stats-strong"));
 		return {
 			innerText: el.innerText,
 			bubbleWidth: el.getBoundingClientRect().width,
 			viewportWidth: window.innerWidth,
 			rowCount: rows.length,
 			rowHeights,
-			wrappedRowCount: wrapped
+			wrappedRowCount: wrapped,
+			labelColors,
+			strongCount: strongs.length,
+			strongTexts: strongs.map((s) => s.textContent),
+			stripStrongCount: stripStrongs.length,
+			stripStrongTexts: stripStrongs.map((s) => s.textContent)
 		};
 	});
 
