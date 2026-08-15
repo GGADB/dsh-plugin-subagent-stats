@@ -82,15 +82,20 @@ const TITLE = process.argv[2] ?? "<your-session-title>";
 	const tooltip = await page.evaluate(() => {
 		const el = document.querySelector('div[role="tooltip"]');
 		if (!el) return null;
-		const rows = Array.from(el.firstElementChild ? el.firstElementChild.children : []);
-		const rowHeights = rows.map((r) => r.getBoundingClientRect().height);
-		const wrapped = rowHeights.filter((h) => h > 20).length; // line-height 18px → wrapped rows exceed 20px
-		// Title colors: first span of each content row (skip the divider).
-		const contentRows = rows.filter((r) => r.getBoundingClientRect().height > 8);
-		const labelColors = contentRows.map((r) => {
-			const label = r.firstElementChild;
-			return label ? getComputedStyle(label).color : null;
-		});
+		const body = el.firstElementChild;
+		const cells = body ? Array.from(body.children) : [];
+		// Grid layout: label/value cell pairs.
+		const pairs = [];
+		for (let i = 0; i + 1 < cells.length; i += 2) pairs.push([cells[i], cells[i + 1]]);
+		const rowHeights = pairs.map(([label, value]) => Math.max(label.getBoundingClientRect().height, value.getBoundingClientRect().height));
+		const wrapped = rowHeights.filter((h) => h > 20).length; // line-height 16px → wrapped rows exceed 20px
+		// Title colors: label cell of each pair.
+		const contentRows = pairs.filter(([label]) => label.getBoundingClientRect().height > 8);
+		const labelColors = contentRows.map(([label]) => getComputedStyle(label).color);
+		// First-character alignment: every row's value cell must start at the
+		// same x position.
+		const valueLefts = contentRows.map(([, value]) => Math.round(value.getBoundingClientRect().left));
+		const aligned = valueLefts.length > 0 && valueLefts.every((x) => x === valueLefts[0]);
 		// Emphasized key values: spans with font-weight 700 (amber chip).
 		const strongs = Array.from(el.querySelectorAll("span")).filter((s) => getComputedStyle(s).fontWeight === "700");
 		// Strip-level emphasis (bottom stats line).
@@ -100,10 +105,12 @@ const TITLE = process.argv[2] ?? "<your-session-title>";
 			mergedRowAbsent: !el.innerText.includes("合计") && !el.innerText.includes("Total"),
 			bubbleWidth: el.getBoundingClientRect().width,
 			viewportWidth: window.innerWidth,
-			rowCount: rows.length,
+			rowCount: pairs.length,
 			rowHeights,
 			wrappedRowCount: wrapped,
 			labelColors,
+			valueLefts,
+			aligned,
 			strongCount: strongs.length,
 			strongTexts: strongs.map((s) => s.textContent),
 			strongColors: strongs.slice(0, 3).map((s) => getComputedStyle(s).color),
