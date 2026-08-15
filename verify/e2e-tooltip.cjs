@@ -84,20 +84,23 @@ const TITLE = process.argv[2] ?? "<your-session-title>";
 		if (!el) return null;
 		const body = el.firstElementChild;
 		const cells = body ? Array.from(body.children) : [];
-		// Grid layout: label/value cell pairs.
-		const pairs = [];
-		for (let i = 0; i + 1 < cells.length; i += 2) pairs.push([cells[i], cells[i + 1]]);
-		const rowHeights = pairs.map(([label, value]) => Math.max(label.getBoundingClientRect().height, value.getBoundingClientRect().height));
+		// Grid layout: each row = label + 5 data-group cells (6 cells).
+		const PER_ROW = 6;
+		const rowsArr = [];
+		for (let i = 0; i + PER_ROW <= cells.length; i += PER_ROW) rowsArr.push(cells.slice(i, i + PER_ROW));
+		const rowHeights = rowsArr.map((row) => Math.max(...row.map((c) => c.getBoundingClientRect().height)));
 		const wrapped = rowHeights.filter((h) => h > 20).length; // line-height 16px → wrapped rows exceed 20px
-		// Title colors: label cell of each pair.
-		const contentRows = pairs.filter(([label]) => label.getBoundingClientRect().height > 8);
-		const labelColors = contentRows.map(([label]) => getComputedStyle(label).color);
-		// First-character alignment: every row's value cell must start at the
-		// same x position.
-		const valueLefts = contentRows.map(([, value]) => Math.round(value.getBoundingClientRect().left));
-		const aligned = valueLefts.length > 0 && valueLefts.every((x) => x === valueLefts[0]);
+		// Per-column alignment: every row's cell for the same column must start
+		// at the same x (label, counts, LLM, TTFT, cache, tokens).
+		const colLefts = [0, 1, 2, 3, 4, 5].map((ci) => rowsArr.map((row) => Math.round(row[ci].getBoundingClientRect().left)));
+		const alignedCols = colLefts.map((xs) => xs.length > 0 && xs.every((x) => x === xs[0]));
+		const aligned = alignedCols.every(Boolean);
+		const labelColors = rowsArr.map((row) => getComputedStyle(row[0]).color);
 		// Emphasized key values: spans with font-weight 700 (amber chip).
 		const strongs = Array.from(el.querySelectorAll("span")).filter((s) => getComputedStyle(s).fontWeight === "700");
+		// The bubble must CONTAIN every figure: no horizontal overflow beyond
+		// its own box (font shrinks to fit instead).
+		const contained = el.scrollWidth <= el.clientWidth + 2;
 		// Strip-level emphasis (bottom stats line).
 		const stripStrongs = Array.from(document.querySelectorAll(".dsh-subagent-stats-strong"));
 		return {
@@ -105,11 +108,14 @@ const TITLE = process.argv[2] ?? "<your-session-title>";
 			mergedRowAbsent: !el.innerText.includes("合计") && !el.innerText.includes("Total"),
 			bubbleWidth: el.getBoundingClientRect().width,
 			viewportWidth: window.innerWidth,
-			rowCount: pairs.length,
+			bubbleFontSize: getComputedStyle(el).fontSize,
+			contained,
+			rowCount: rowsArr.length,
 			rowHeights,
 			wrappedRowCount: wrapped,
 			labelColors,
-			valueLefts,
+			colLefts,
+			alignedCols,
 			aligned,
 			strongCount: strongs.length,
 			strongTexts: strongs.map((s) => s.textContent),
