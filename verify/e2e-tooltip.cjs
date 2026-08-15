@@ -38,17 +38,43 @@ const TITLE = process.argv[2] ?? "<your-session-title>";
 		const el = document.querySelector(".dsh-subagent-stats-root");
 		return el.scrollWidth > el.clientWidth;
 	});
-	// "No data swallowed" checks: the strip must show its full tail (the last
-	// group: "输出 … tok") and must not clip horizontally.
+	// "No data swallowed, one line" checks: the strip must show its full tail,
+	// stay on a single line (height ≈ 20px line + 4px padding), and not clip
+	// horizontally (font shrinks to fit instead).
 	const stripMetrics = await page.evaluate(() => {
 		const el = document.querySelector(".dsh-subagent-stats-root");
 		return {
 			scrollWidth: el.scrollWidth,
 			clientWidth: el.clientWidth,
-			clientHeight: el.clientHeight
+			clientHeight: el.clientHeight,
+			fontSize: getComputedStyle(el).fontSize
 		};
 	});
 	const tailVisible = /输出 [\d.]+[KM]? tok/.test(line);
+	const oneLine = stripMetrics.clientHeight <= 30;
+	const noClip = stripMetrics.scrollWidth <= stripMetrics.clientWidth + 2;
+
+	// Centering under the chat dialog: strip center must align with the
+	// composer seat (chat column) center.
+	const geometry = await page.evaluate(() => {
+		const strip = document.querySelector(".dsh-subagent-stats-root");
+		const seat = document.querySelector("[data-composer-seat]");
+		const sr = strip.getBoundingClientRect();
+		const seatR = seat ? seat.getBoundingClientRect() : null;
+		return {
+			stripCenterX: sr.left + sr.width / 2,
+			seatCenterX: seatR ? seatR.left + seatR.width / 2 : null,
+			stripLeft: sr.left,
+			stripRight: sr.right,
+			seatLeft: seatR ? seatR.left : null,
+			seatRight: seatR ? seatR.right : null,
+			seatTop: seatR ? seatR.top : null,
+			stripTop: sr.top,
+			stripBottom: sr.bottom
+		};
+	});
+	const centered = geometry.seatCenterX !== null && Math.abs(geometry.stripCenterX - geometry.seatCenterX) < 3;
+	const belowDialog = geometry.seatTop !== null && geometry.stripTop >= geometry.seatTop;
 
 	// Hover and wait for the 500ms tooltip delay.
 	await page.hover(".dsh-subagent-stats-root");
@@ -88,7 +114,12 @@ const TITLE = process.argv[2] ?? "<your-session-title>";
 		line,
 		isTruncated,
 		tailVisible,
+		oneLine,
+		noClip,
+		centered,
+		belowDialog,
 		stripMetrics,
+		geometry,
 		tooltip,
 		consoleErrors,
 		pageErrors
