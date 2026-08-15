@@ -91,12 +91,13 @@ const TITLE = process.argv[2] ?? "<your-session-title>";
 			const label = r.firstElementChild;
 			return label ? getComputedStyle(label).color : null;
 		});
-		// Emphasized key values: spans with font-weight 600.
-		const strongs = Array.from(el.querySelectorAll("span")).filter((s) => getComputedStyle(s).fontWeight === "600");
+		// Emphasized key values: spans with font-weight 700 (amber chip).
+		const strongs = Array.from(el.querySelectorAll("span")).filter((s) => getComputedStyle(s).fontWeight === "700");
 		// Strip-level emphasis (bottom stats line).
 		const stripStrongs = Array.from(document.querySelectorAll(".dsh-subagent-stats-strong"));
 		return {
 			innerText: el.innerText,
+			mergedRowAbsent: !el.innerText.includes("合计") && !el.innerText.includes("Total"),
 			bubbleWidth: el.getBoundingClientRect().width,
 			viewportWidth: window.innerWidth,
 			rowCount: rows.length,
@@ -105,6 +106,7 @@ const TITLE = process.argv[2] ?? "<your-session-title>";
 			labelColors,
 			strongCount: strongs.length,
 			strongTexts: strongs.map((s) => s.textContent),
+			strongColors: strongs.slice(0, 3).map((s) => getComputedStyle(s).color),
 			stripStrongCount: stripStrongs.length,
 			stripStrongTexts: stripStrongs.map((s) => s.textContent)
 		};
